@@ -55,3 +55,7 @@ IPython.keyboard_manager.command_shortcuts.add_shortcuts({
   }
 
 })
+
+$('head').append('<link rel="stylesheet" href=' + 
+                  require.toUrl('custom/searchhelp/main.css') + 
+                  ' />');
