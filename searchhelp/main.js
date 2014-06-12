@@ -26,12 +26,10 @@ var doSubmit = function() {
 };
 
 el = $(
-'<div id="helpSearch-container">' + 
-' <form id="helpSearch">' +
-'   <input type="search" class="form-control" id="searchField" placeholder="Search help...">' +
-'   <button type="submit" class="btn">Search</button>' +
-' </form>' +
-'</div>');
+'<form class="navbar-search pull-right" id="helpSearch">'+
+'   <input type="search" class="search-query" placeholder="Search help" id="searchField">'+
+'</form>'
+);
 
 $('#maintoolbar-container').append(el);
 
