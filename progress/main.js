@@ -1,34 +1,60 @@
-var patchAppendStream = function(){
 
-	var old_append_stream = IPython.OutputArea.prototype.append_stream;
+// var patchAppendStream = function(){
 
-	IPython.OutputArea.prototype.append_stream = function(json) {
-		if (json.text !== undefined) {
-			json.text = parseOutputText(json.text,this); 
-		}
-		old_append_stream.call(this,json);
+// 	var old_append_stream = IPython.OutputArea.prototype.append_stream;
+
+// 	IPython.OutputArea.prototype.append_stream = function(json) {
+// 		if (json.text !== undefined) {
+// 			json.text = parseOutputText(json.text,this); 
+// 		}
+// 		old_append_stream.call(this,json);
+// 	};
+
+// 	console.log("append_stream patched");
+// };
+
+// var parseOutputText = function(text,output_area) {
+// 	//search for PROG(<prog>) which must be in a new line
+// 	//ignores everything after ) until end of line
+// 	var re = /^\s*PROG\(.*?\)\s*\n?/mg;
+// 	var m = text.match(re);
+// 	if (m !== null) {
+// 		for (var i=0; i < m.length; i++) {
+// 			var prog = parseFloat(m[i].split(/[()]/,2)[1]);
+// 			if (prog===prog) { //ie, is not NaN
+// 				setProgress(prog,output_area);
+// 			}
+// 		}
+// 		//remove progress lines from output
+// 		text = text.replace(re,"");
+// 	}
+// 	return text;
+// };
+
+var patchHandleOutput = function() {
+
+	var old_handle_output = IPython.OutputArea.prototype.handle_output;
+
+	IPython.OutputArea.prototype.handle_output = function(msg) {
+		//check if message has metadata.progress property to see if it is our
+		//custom message. If it is call setProgress and return
+		if (msg.msg_type === "display_data" && msg.content.metadata.progress !== undefined) {
+			var prog = msg.content.metadata.progress
+			if (prog === prog) {//check that it is not NaN
+				setProgress(prog,this);
+			}
+		
+		} else { //if regular message, continue	with old function
+			
+			return old_handle_output.call(this,msg);
+		
+		}		
+
+
 	};
 
-	console.log("append_stream patched");
-};
-
-var parseOutputText = function(text,output_area) {
-	//search for PROG(<prog>) which must be in a new line
-	//ignores everything after ) until end of line
-	var re = /^\s*PROG\(.*?\)\s*\n?/mg;
-	var m = text.match(re);
-	if (m !== null) {
-		for (var i=0; i < m.length; i++) {
-			var prog = parseFloat(m[i].split(/[()]/,2)[1]);
-			if (prog===prog) { //ie, is not NaN
-				setProgress(prog,output_area);
-			}
-		}
-		//remove progress lines from output
-		text = text.replace(re,"");
-	}
-	return text;
-};
+	console.log("append_javascript patched");
+}
 
 var setProgress = function(prog,output_area) {
 	
@@ -38,6 +64,7 @@ var setProgress = function(prog,output_area) {
 	console.log("Setting progress at " + prog);
 
 	output_area._progress = prog;
+	
 	$([IPython.events]).trigger('progress.updated');
 };
 
@@ -47,10 +74,16 @@ var updateProgressEverywhere = function(resetProg) {
 	$(cells).each(function() {
 		if (this.output_area) {
 			prog = this.output_area._progress;
+
+			for (var i=0; i < this.output_area.outputs; i++) {
+				var md = this.output_area.outputs[i]
+			}
 		} 
 		if (prog === undefined || resetProg === true) prog = 100;
 		this.metadata.progress = prog;
+
 	});
+
 	redrawProgress();
 };
 
@@ -79,24 +112,50 @@ var CellToolbar = IPython.CellToolbar;
 
 
 var add_progress_bar = function(div, cell) {
-	var prog
-    var progbar = $('<progress/>')
-		.css({
-			'width': "200px",
-		})
-		.attr("max",100)
-		.attr("value",cell.metadata.progress);
-    div.append(progbar);
+  var progbar = $('<progress/>')
+	.css({
+		'width': "200px",
+	})
+	.attr("max",100)
+	.attr("value",cell.metadata.progress);
+  div.append(progbar);
 };
 
 CellToolbar.register_callback('progress.show', add_progress_bar);
 CellToolbar.register_preset('Progress Bar', ['progress.show']);
 
-patchAppendStream();
+// patchAppendStream();
+patchHandleOutput(); 	
 $([IPython.events]).on('progress.updated',updateProgressEverywhere);
-$([IPython.events]).on('status_idle.Kernel', resetProgressEverywhere);
+//$([IPython.events]).on('status_idle.Kernel', resetProgressEverywhere);
+// $([IPython.events]).on('status_idle.Kernel', resetProgressEverywhere);
 
 
+var injectPythonCode = function() {
+	var py_code = 
+	"from IPython.display import display,Javascript\n" + 
+	"def setProgress(prog):\n"+
+	"	display('PROG',metadata={'progress':prog})"
 
+	var kernel = IPython.notebook.kernel;
+	var _execute = function() {
+ 		console.log("injecting python code");
+
+		kernel.execute(py_code,{},{
+		  'silent':false,'store_history':false
+		});
+	};
+	// _execute();
+	//must wait for the websockets to open before calling kernel.execute
+	var websocket = IPython.notebook.kernel.shell_channel
+	if (websocket.readyState === 1) {
+		_execute();
+	} else {
+		websocket.onopen = _execute;
+	}
+	
+}
+
+$([IPython.events]).on('status_started.Kernel',injectPythonCode);
 
 
