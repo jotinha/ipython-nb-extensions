@@ -130,32 +130,29 @@ $([IPython.events]).on('progress.updated',updateProgressEverywhere);
 //$([IPython.events]).on('status_idle.Kernel', resetProgressEverywhere);
 // $([IPython.events]).on('status_idle.Kernel', resetProgressEverywhere);
 
-
 var injectPythonCode = function() {
-	var py_code = 
-	"from IPython.display import display,Javascript\n" + 
-	"def setProgress(prog):\n"+
-	"	display('PROG',metadata={'progress':prog})"
+	$.get('/static/custom/progress/progress.py',function(data) {
+		var py_code = data;
 
-	var kernel = IPython.notebook.kernel;
-	var _execute = function() {
- 		console.log("injecting python code");
+		var kernel = IPython.notebook.kernel;
+		var _execute = function() {
+	 		console.log("injecting python code");
 
-		kernel.execute(py_code,{},{
-		  'silent':false,'store_history':false
-		});
-	};
-	// _execute();
-	//must wait for the websockets to open before calling kernel.execute
-	var websocket = IPython.notebook.kernel.shell_channel
-	if (websocket.readyState === 1) {
-		_execute();
-	} else {
-		websocket.onopen = _execute;
-	}
-	
+			kernel.execute(py_code,{},{
+			  'silent':false,'store_history':false
+			});
+		};
+		// _execute();
+		//must wait for the websockets to open before calling kernel.execute
+		var websocket = IPython.notebook.kernel.shell_channel
+		if (websocket.readyState === 1) {
+			_execute();
+		} else {
+			websocket.onopen = _execute;
+		}
+
+	});
+
 }
 
 $([IPython.events]).on('status_started.Kernel',injectPythonCode);
-
-
