@@ -11,8 +11,16 @@ def _sendMsg(type,data):
     display('MSG',metadata={'type':type,'data':data})
     #print "Sending message %s: %s" % (type,data)
    
-def setCellProgress(p):
-    _sendMsg('setCellProgress',float(p))
+def setCellProgress(prog):
+    """
+    Sets the current cell progress in an IPython notebook to a new value.
+
+    Expects a number between 0 and 1.
+    """
+    _sendMsg('setCellProgress',float(prog))
    
-def addCellProgress(d):
-    _sendMsg('addCellProgress',float(d))
+def addCellProgress(delta):
+    """
+    Updates the current cell progress in an IPython notebook by an amount delta.
+    """
+    _sendMsg('addCellProgress',float(delta))
