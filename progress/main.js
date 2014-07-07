@@ -65,6 +65,17 @@ var setProgress = function(prog,output_area) {
 
 	output_area._progress = prog;
 
+	var progElem = output_area.element.find('progress');
+	if (progElem.length === 0) {
+		progElem = $(add_progress_bar(output_area.element));
+	}
+
+	if (progElem.length === 1) {
+		progElem.attr('value',prog);	
+	} else {
+		throw "Got more than one progress elements in output area!"
+	}
+
 	$([IPython.events]).trigger('progress.updated');
 };
 
@@ -104,21 +115,24 @@ var redrawProgress = function() {
 
 var CellToolbar = IPython.CellToolbar;
 
-// var raw_edit = function(cell){
-//     IPython.dialog.edit_metadata(cell.metadata, function (md) {
-//         cell.metadata = md;
-//     });
-// };
-
-
 var add_progress_bar = function(div, cell) {
   var progbar = $('<progress/>')
 	.css({
-		'width': "200px",
+		'width': "300px",
 	})
-	.attr("max",1)
-	.attr("value",cell.metadata.progress);
-  div.append(progbar);
+	.attr("max",1);
+  if (cell)
+  	progbar.attr("value",cell.metadata.progress);
+
+  div.prepend(
+  	$('<div class="output_area"/>')
+  	.append($('<div class="prompt"/>'))
+  	.append($('<div class="subarea output_text output_stream output_stdout"/>')
+  		.append(progbar)
+  	)
+  );
+
+  return progbar;
 };
 
 CellToolbar.register_callback('progress.show', add_progress_bar);
@@ -158,3 +172,7 @@ var injectPythonCode = function() {
 }
 
 $([IPython.events]).on('status_started.Kernel',injectPythonCode);
+
+var add_progress_bar_to_outputArea = function() {
+
+}
