@@ -59,12 +59,12 @@ var patchHandleOutput = function() {
 var setProgress = function(prog,output_area) {
 	
 	if (prog < 0) prog = 0;
-	if (prog > 100) prog = 100;
+	if (prog > 1) prog = 1;
 
 	console.log("Setting progress at " + prog);
 
 	output_area._progress = prog;
-	
+
 	$([IPython.events]).trigger('progress.updated');
 };
 
@@ -79,7 +79,7 @@ var updateProgressEverywhere = function(resetProg) {
 				var md = this.output_area.outputs[i]
 			}
 		} 
-		if (prog === undefined || resetProg === true) prog = 100;
+		if (prog === undefined || resetProg === true) prog = 1;
 		this.metadata.progress = prog;
 
 	});
@@ -116,7 +116,7 @@ var add_progress_bar = function(div, cell) {
 	.css({
 		'width': "200px",
 	})
-	.attr("max",100)
+	.attr("max",1)
 	.attr("value",cell.metadata.progress);
   div.append(progbar);
 };
@@ -134,9 +134,11 @@ var injectPythonCode = function() {
 	$.get('/static/custom/progress/progress.py',function(data) {
 		var py_code = data;
 
+
 		var kernel = IPython.notebook.kernel;
 		var _execute = function() {
 	 		console.log("injecting python code");
+	 		console.log(py_code);
 
 			kernel.execute(py_code,{},{
 			  'silent':false,'store_history':false

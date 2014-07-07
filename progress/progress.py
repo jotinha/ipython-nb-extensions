@@ -34,7 +34,5 @@ class NBProgress(object):
         self.value = p
         
     def _send(self):
-        print "Sending " + str(self._progress)
-        #display('PROG',metadata={'progress':self.progress})
-
-a = NBProgress()            
+        #print "Sending " + str(self._progress)
+        display('PROG',metadata={'progress':self.value})
