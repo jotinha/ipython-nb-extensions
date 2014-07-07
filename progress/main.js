@@ -35,6 +35,7 @@ var addProgress = function(delta,output_area) {
 	}
 }
 
+
 var setProgress = function(prog,output_area) {
 	
 	prog = parseFloat(prog);
@@ -63,8 +64,7 @@ var setProgress = function(prog,output_area) {
 };
 
 var add_progress_bar = function(div) {
-  var progbar = $('<progress/>')
-  	.attr('id','outputProgress')
+  var progbar = $('<progress id="outputProgress"/>')
 	.attr('max',1)
 	.css({
 		'width': "100%",
@@ -73,7 +73,7 @@ var add_progress_bar = function(div) {
 
   //add to top
   div.prepend(
-  	$('<div class="output_area"/>')
+  	$('<div class="output_area" id="outputProgressArea"/>')
   	.append($('<div class="prompt"/>'))
   	.append($('<div class="output_subarea output_html"/>')
   		.append(progbar)
@@ -87,7 +87,9 @@ var deleteAllProgress = function() {
 	$(IPython.notebook.get_cells()).each(function() {
         if (this.output_area && this.output_area._progress !== undefined) {
             
-            setProgress(1,this.output_area);
+            setProgress(1,this.output_area); //first set to one for some visual feedback
+            
+            this.output_area.element.find('#outputProgressArea').fadeOut(); //remove progress bar
 
             this.output_area._progress = undefined;
         }
