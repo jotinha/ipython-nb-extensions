@@ -1,3 +1,6 @@
+var ADDNUMBER = false;
+var MAXLEVEL = 3;
+
 var createTOC = function() {
 
   var el = $(
@@ -51,34 +54,56 @@ var updateTOC = function() {
 
   // })
 
+  console.log("updating TOC")
+
   var parent = $('<ul class="nav nav-list"></ul>');
   toc.append(parent);
   var nlevel = {};
+
   $('#notebook').find(':header').each(function(idx,el) {
+    
+    if ($(el).parents('.output_area').length > 0) {
+      //this means this header element was output from a codecell. IGNORE
+      return;
+    }
+
     var level = parseInt(el.nodeName.substring(1), 10);
+    if (level > MAXLEVEL) return;
     
     nlevel[level] = (nlevel[level] || 0 ) + 1
     
     var anchor = '#' + el.id;
-    var text = el.textContent.replace('¶','');
-    var li = $('<li>')
-            .addClass('toc-h' + level)
+    var c = $(el).clone(); //this should copy the whole html, including mathjax
+        c.find('a').remove();  //may include <a class=".anchor-text">
+        c.find('script[type="math/tex"]').remove(); //may include <script type=["math/text"]
+    
+    var text = c.contents().first().text();
 
-    if (level == 1) {
-      text = nlevel[level] + '. ' + text;
-    } else if (level == 2) {
-      text = nlevel[level-1] + '.' + nlevel[level] + '. ' + text;
+    if (ADDNUMBER) {
+      if (level == 1) {
+        text = nlevel[level] + '. ' + text;
+      } else if (level == 2) {
+        text = nlevel[level-1] + '.' + nlevel[level] + '. ' + text;
+      }
     }
 
-    li.append($('<a>')
-              .text(text)
+    var li = $('<li>')
+        .addClass('toc-h' + level)
+        .append($('<a>')
               .attr('href',anchor)
+              .text(text)
+              .append(c.children())
               ); 
     parent.append(li);
     prevLevel = level;
 
   })
 
+
+}
+
+var updateTOCAfterMath = function() {
+  MathJax.Hub.queue.Push(updateTOC); //this should execute after all mathjax has been typset
 }
 
 var addCSS = function() {
@@ -87,8 +112,26 @@ var addCSS = function() {
                     ' />');
 };
 
+                
+var patchRender = function() {
+
+  $([IPython.MarkdownCell,IPython.HeadingCell]).each(function(idx,cell) {
+    
+    var old_render = cell.prototype.render;
+
+    cell.prototype.render = function() {
+      var r = old_render.call(this);
+      updateTOCAfterMath();
+      return r;
+    };
+  });
+
+  console.log("render patched");
+}
+
+
 createTOC();
-updateTOC();
+updateTOC(); //first pass
+patchRender();
+updateTOCAfterMath();
 addCSS();
-
-
