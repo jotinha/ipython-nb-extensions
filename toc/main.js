@@ -135,3 +135,9 @@ updateTOC(); //first pass
 patchRender();
 updateTOCAfterMath();
 addCSS();
+
+var setCurRunningCell = function(event, idx) {
+
+}
+
+$([IPython.events]).on('running_cell_change.Notebook', function(event,idx) { setCurRunningCell(idx);});
